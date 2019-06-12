@@ -32,6 +32,41 @@ export const addFavorite = functions.https.onRequest((request, response) => {
     }
 });
 
+export const removeFavorite = functions.https.onRequest((request, response) => {
+
+    response.header('Access-Control-Allow-Origin', '*');
+    response.header('Access-Control-Allow-Headers', request.header('Access-Control-Request-Headers'));
+    response.header('Access-Control-Allow-Methods', request.header('Access-Control-Request-Method'));
+
+    console.log(request.method);
+
+    if (request.method === 'OPTIONS') {
+        response.send(204);
+    } else if (request.method === 'DELETE') {
+        const userTweet: UserTweet = new UserTweet();
+        userTweet.user = request.body.user;
+        userTweet.tweet = request.body.tweet;
+
+        if (!userTweet.isValid()) {
+            response.status(400).send('invalid body')
+        }
+
+        const query: any = firebase.firestore().collection('favorites').where('user', '==', userTweet.user).where('tweet', '==', userTweet.tweet);
+
+        query.get().then((snapshot: any) => {
+            snapshot.docs.forEach((doc: any) => {
+                doc.ref.delete()
+
+            });
+            response.status(204).send();
+
+        }).catch((err: any) => {
+            response.status(400).send(err);
+        })
+
+    }
+});
+
 export const favorites = functions.https.onRequest((request, response) => {
 
     response.header('Access-Control-Allow-Origin', '*');
